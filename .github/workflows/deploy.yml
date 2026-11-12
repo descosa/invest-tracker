@@ -37,9 +37,9 @@ jobs:
       - name: Build Web App
         run: npx expo export -p web
 
-      - name: Add Apple Mobile Web App tags to index.html
+      - name: Optimize index.html for iOS Fullscreen
         run: |
-          sed -i 's/<title>invest-tracker<\/title>/<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="InvestTracker"><title>Invest Tracker<\/title>/g' dist/index.html
+          sed -i 's/<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" \/>/<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover, user-scalable=no" \/><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="InvestTracker"><meta name="theme-color" content="#090d16"><style>html, body, #root { background-color: #090d16 !important; height: 100%; margin: 0; padding: 0; }</style>/g' dist/index.html
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
@@ -49,3 +49,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
