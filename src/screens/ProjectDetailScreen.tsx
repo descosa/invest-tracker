@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Platform,
 } from 'react-native';
 import { InvestmentProject, Transaction } from '../types/investment';
 import {
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 30,
+    paddingBottom: Platform.OS === 'web' ? 40 : 30,
   },
   navBar: {
     flexDirection: 'row',

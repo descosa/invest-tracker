@@ -50,8 +50,28 @@ jobs:
               '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
               '<meta name="apple-mobile-web-app-title" content="InvestTracker">'
               '<meta name="theme-color" content="#090d16">'
-              '<style>html,body,#root{background-color:#090d16 !important;height:100%;margin:0;padding:0;}</style>'
+              '<style>'
+              'html, body { background-color: #090d16 !important; height: 100%; margin: 0; padding: 0; }'
+              '#root {'
+              '  background-color: #090d16 !important;'
+              '  height: 100%;'
+              '  display: flex;'
+              '  flex: 1;'
+              '  padding-top: env(safe-area-inset-top);'
+              '  padding-bottom: env(safe-area-inset-bottom);'
+              '  padding-left: env(safe-area-inset-left);'
+              '  padding-right: env(safe-area-inset-right);'
+              '  box-sizing: border-box;'
+              '}'
+              '</style>'
           )
+          html = html.replace(old, new)
+
+          with open('dist/index.html', 'w', encoding='utf-8') as f:
+              f.write(html)
+
+          print('index.html patched successfully')
+          EOF
           html = html.replace(old, new)
 
           with open('dist/index.html', 'w', encoding='utf-8') as f:
