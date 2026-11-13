@@ -72,13 +72,6 @@ jobs:
 
           print('index.html patched successfully')
           EOF
-          html = html.replace(old, new)
-
-          with open('dist/index.html', 'w', encoding='utf-8') as f:
-              f.write(html)
-
-          print('index.html patched successfully')
-          EOF
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
