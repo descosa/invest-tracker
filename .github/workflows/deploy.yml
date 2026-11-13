@@ -39,41 +39,6 @@ jobs:
         env:
           EXPO_PUBLIC_BUILD_ID: ${{ github.sha }}
 
-      - name: Optimize index.html for iOS Fullscreen PWA
-        run: |
-          python3 - <<'EOF'
-          with open('dist/index.html', 'r', encoding='utf-8') as f:
-              html = f.read()
-
-          old = '<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />'
-          new = (
-              '<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover, user-scalable=no" />'
-              '<meta name="apple-mobile-web-app-capable" content="yes">'
-              '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-              '<meta name="apple-mobile-web-app-title" content="InvestTracker">'
-              '<meta name="theme-color" content="#090d16">'
-              '<style>'
-              'html, body { background-color: #090d16 !important; margin: 0; padding: 0; overscroll-behavior: none; }'
-              'body { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; }'
-              '#root {'
-              '  background-color: #090d16 !important;'
-              '  position: absolute; top: 0; right: 0; bottom: 0; left: 0;'
-              '  display: flex;'
-              '  padding-top: env(safe-area-inset-top);'
-              '  padding-left: env(safe-area-inset-left);'
-              '  padding-right: env(safe-area-inset-right);'
-              '  box-sizing: border-box;'
-              '}'
-              '</style>'
-          )
-          html = html.replace(old, new)
-
-          with open('dist/index.html', 'w', encoding='utf-8') as f:
-              f.write(html)
-
-          print('index.html patched successfully')
-          EOF
-
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:

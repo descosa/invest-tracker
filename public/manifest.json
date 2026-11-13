@@ -1,0 +1,18 @@
+{
+  "name": "Invest Tracker",
+  "short_name": "InvestTracker",
+  "start_url": "/invest-tracker/",
+  "scope": "/invest-tracker/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "icons": [
+    {
+      "src": "/invest-tracker/apple-touch-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
