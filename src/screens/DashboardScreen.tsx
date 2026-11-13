@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { InvestmentCategory, InvestmentProject } from '../types/investment';
 import {
