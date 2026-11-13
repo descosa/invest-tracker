@@ -5,8 +5,8 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { RefreshableScrollView } from '../components/RefreshableScrollView';
 import { scrollBottomPadding } from '../utils/layout';
 import { InvestmentCategory, InvestmentProject } from '../types/investment';
@@ -47,7 +47,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const availableCategories = Array.from(new Set(projects.map((p) => p.category)));
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ScreenContainer style={styles.safeArea}>
       <RefreshableScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -177,8 +177,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             ))
           )}
         </View>
+
+        <Text style={styles.buildText}>
+          versión {(process.env.EXPO_PUBLIC_BUILD_ID ?? 'local').slice(0, 7)}
+        </Text>
       </RefreshableScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 };
 
@@ -348,6 +352,12 @@ const styles = StyleSheet.create({
   emptyDesc: {
     fontSize: 12,
     color: '#64748b',
+  },
+  buildText: {
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 10,
+    color: '#334155',
   },
 });
 

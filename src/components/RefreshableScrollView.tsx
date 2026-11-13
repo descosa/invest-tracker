@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
   ScrollViewProps,
@@ -8,9 +8,6 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  GestureResponderEvent,
 } from 'react-native';
 
 interface Props extends ScrollViewProps {
@@ -19,29 +16,99 @@ interface Props extends ScrollViewProps {
 }
 
 const PULL_THRESHOLD = 70;
-const MAX_PULL = 110;
+const MAX_PULL = 120;
 
 /**
  * ScrollView con "tirar para refrescar".
- * - iOS/Android nativo: usa RefreshControl.
- * - Web (incluida PWA en iPhone): implementación propia con eventos táctiles,
- *   ya que RefreshControl no funciona en react-native-web.
+ * - iOS/Android nativo: RefreshControl.
+ * - Web / PWA (Safari iOS): listeners táctiles nativos del DOM sobre el nodo
+ *   desplazable, ya que RefreshControl no funciona en react-native-web.
  */
 export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ...rest }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [pull, setPull] = useState(0);
-  const scrollY = useRef(0);
-  const startY = useRef<number | null>(null);
+  const scrollRef = useRef<any>(null);
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   const runRefresh = async () => {
     setRefreshing(true);
     try {
-      await onRefresh();
+      await onRefreshRef.current();
     } finally {
       setRefreshing(false);
       setPull(0);
     }
   };
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const anyRef = scrollRef.current as any;
+    const node: HTMLElement | null =
+      anyRef?.getScrollableNode?.() ?? (typeof HTMLElement !== 'undefined' && anyRef instanceof HTMLElement ? anyRef : null);
+    if (!node) return;
+
+    let startY: number | null = null;
+    let currentPull = 0;
+    let busy = false;
+
+    const onStart = (e: TouchEvent) => {
+      if (busy || node.scrollTop > 0) {
+        startY = null;
+        return;
+      }
+      startY = e.touches[0].clientY;
+      currentPull = 0;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (startY === null || busy) return;
+      const delta = e.touches[0].clientY - startY;
+      if (delta <= 0 || node.scrollTop > 0) {
+        if (currentPull !== 0) {
+          currentPull = 0;
+          setPull(0);
+        }
+        return;
+      }
+      // Evita el rebote nativo mientras se tira hacia abajo
+      if (e.cancelable) e.preventDefault();
+      currentPull = Math.min(MAX_PULL, delta * 0.5);
+      setPull(currentPull);
+    };
+
+    const onEnd = async () => {
+      if (startY === null) return;
+      startY = null;
+      const shouldRefresh = currentPull >= PULL_THRESHOLD;
+      currentPull = 0;
+      if (!shouldRefresh) {
+        setPull(0);
+        return;
+      }
+      busy = true;
+      setPull(PULL_THRESHOLD);
+      setRefreshing(true);
+      try {
+        await onRefreshRef.current();
+      } finally {
+        busy = false;
+        setRefreshing(false);
+        setPull(0);
+      }
+    };
+
+    node.addEventListener('touchstart', onStart, { passive: true });
+    node.addEventListener('touchmove', onMove, { passive: false });
+    node.addEventListener('touchend', onEnd);
+    node.addEventListener('touchcancel', onEnd);
+    return () => {
+      node.removeEventListener('touchstart', onStart);
+      node.removeEventListener('touchmove', onMove);
+      node.removeEventListener('touchend', onEnd);
+      node.removeEventListener('touchcancel', onEnd);
+    };
+  }, []);
 
   if (Platform.OS !== 'web') {
     return (
@@ -56,53 +123,11 @@ export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ..
     );
   }
 
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollY.current = e.nativeEvent.contentOffset.y;
-    rest.onScroll?.(e);
-  };
-
-  const handleTouchStart = (e: GestureResponderEvent) => {
-    if (refreshing) return;
-    startY.current = scrollY.current <= 0 ? e.nativeEvent.touches[0]?.pageY ?? null : null;
-  };
-
-  const handleTouchMove = (e: GestureResponderEvent) => {
-    if (startY.current === null || refreshing) return;
-    const y = e.nativeEvent.touches[0]?.pageY;
-    if (y === undefined) return;
-    const delta = y - startY.current;
-    if (delta <= 0 || scrollY.current > 0) {
-      setPull(0);
-      return;
-    }
-    // Resistencia progresiva
-    setPull(Math.min(MAX_PULL, delta * 0.5));
-  };
-
-  const handleTouchEnd = () => {
-    if (startY.current === null) return;
-    startY.current = null;
-    if (pull >= PULL_THRESHOLD) {
-      setPull(PULL_THRESHOLD);
-      runRefresh();
-    } else {
-      setPull(0);
-    }
-  };
-
   const indicatorHeight = refreshing ? PULL_THRESHOLD : pull;
   const ready = pull >= PULL_THRESHOLD;
 
   return (
-    <ScrollView
-      {...rest}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-    >
+    <ScrollView ref={scrollRef} {...rest}>
       {indicatorHeight > 0 && (
         <View style={[styles.indicator, { height: indicatorHeight }]}>
           {refreshing ? (

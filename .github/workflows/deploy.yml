@@ -36,6 +36,8 @@ jobs:
 
       - name: Build Web App
         run: npx expo export -p web
+        env:
+          EXPO_PUBLIC_BUILD_ID: ${{ github.sha }}
 
       - name: Optimize index.html for iOS Fullscreen PWA
         run: |

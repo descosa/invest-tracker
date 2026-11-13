@@ -5,9 +5,9 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
 } from 'react-native';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { scrollBottomPadding } from '../utils/layout';
 import { InvestmentProject, Transaction } from '../types/investment';
 import {
@@ -61,7 +61,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ScreenContainer style={styles.safeArea}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {/* Navigation Bar */}
         <View style={styles.navBar}>
@@ -203,7 +203,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
           onSave={handleAddTransaction}
         />
       </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 };
 
