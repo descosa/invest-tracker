@@ -22,6 +22,13 @@ export default function App() {
     init();
   }, []);
 
+  // En web hace scroll el documento: volver arriba al cambiar de pantalla
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
+  }, [selectedProjectId]);
+
   const handleUpdateProject = async (updated: InvestmentProject) => {
     const next = projects.map((p) => (p.id === updated.id ? updated : p));
     setProjects(next);

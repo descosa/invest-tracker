@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { RefreshableScrollView } from '../components/RefreshableScrollView';
 import { scrollBottomPadding } from '../utils/layout';
 import { InvestmentProject, Transaction } from '../types/investment';
 import {
@@ -62,7 +63,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
 
   return (
     <ScreenContainer style={styles.safeArea}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <RefreshableScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {/* Navigation Bar */}
         <View style={styles.navBar}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
@@ -202,7 +203,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
           onClose={() => setModalVisible(false)}
           onSave={handleAddTransaction}
         />
-      </ScrollView>
+      </RefreshableScrollView>
     </ScreenContainer>
   );
 };

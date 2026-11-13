@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <!-- viewport-fit=cover: la web ocupa toda la pantalla, incluida la zona del notch y de la barra de inicio -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <!-- viewport-fit=cover: el contenido se dibuja también bajo el notch, la barra de Safari y la barra de inicio -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Invest Tracker</title>
 
     <!-- PWA / iOS -->
@@ -17,76 +17,40 @@
     <meta name="theme-color" content="#090d16" />
 
     <style id="app-layout">
-      html,
+      /*
+       * Buena práctica iOS: dejar que haga scroll el DOCUMENTO (no un div interno).
+       * Así Safari dibuja el contenido bajo sus barras translúcidas y en modo app
+       * la página ocupa toda la pantalla, incluida la zona de la barra de inicio.
+       */
+      html {
+        background-color: #090d16;
+        -webkit-text-size-adjust: 100%;
+      }
       body {
         margin: 0;
         padding: 0;
+        min-height: 100%;
         background-color: #090d16;
-        overscroll-behavior: none;
-        -webkit-text-size-adjust: 100%;
       }
-      /* Body fijo a pantalla completa: el scroll lo hace el ScrollView interno */
-      body {
-        position: fixed;
-        inset: 0;
-        overflow: hidden;
-      }
-      /*
-       * Altura real de la pantalla. Se usa --app-height (calculada por JS)
-       * porque en la PWA de iOS 100% / 100vh a veces se queda corto por abajo.
-       * 100lvh es el fallback CSS (viewport "grande", sin barras).
-       */
       #root {
-        position: absolute;
-        inset: 0;
         display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        min-height: 100lvh;
         box-sizing: border-box;
-        background-color: #090d16;
-        /* Área segura arriba y laterales. La de abajo la gestiona el contenido
-           desplazable para que pase por detrás de la barra de inicio. */
+        /* Área segura superior y laterales; la inferior la añade el final del contenido */
         padding-top: env(safe-area-inset-top);
         padding-left: env(safe-area-inset-left);
         padding-right: env(safe-area-inset-right);
       }
-      /* Solo en modo app (añadida a pantalla de inicio): forzar la altura física completa */
-      html.standalone #root {
-        bottom: auto;
-        height: var(--app-height, 100lvh);
+      /* En modo app no hay "rebote" de página (lo sustituye el tirar para refrescar propio) */
+      @media (display-mode: standalone) {
+        html,
+        body {
+          overscroll-behavior-y: none;
+        }
       }
     </style>
-
-    <script>
-      (function () {
-        var standalone =
-          window.navigator.standalone === true ||
-          (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-
-        if (!standalone) return;
-        document.documentElement.classList.add('standalone');
-
-        function setAppHeight() {
-          var h = window.innerHeight;
-          if (window.screen) {
-            // En modo app (pantalla de inicio) la web ocupa toda la pantalla física
-            var landscape = window.innerWidth > window.innerHeight;
-            var screenH = landscape
-              ? Math.min(window.screen.width, window.screen.height)
-              : Math.max(window.screen.width, window.screen.height);
-            h = Math.max(h, screenH);
-          }
-          document.documentElement.style.setProperty('--app-height', h + 'px');
-        }
-
-        setAppHeight();
-        window.addEventListener('resize', setAppHeight);
-        window.addEventListener('load', setAppHeight);
-        window.addEventListener('pageshow', setAppHeight);
-        if (window.visualViewport) window.visualViewport.addEventListener('resize', setAppHeight);
-        window.addEventListener('orientationchange', function () {
-          setTimeout(setAppHeight, 300);
-        });
-      })();
-    </script>
   </head>
 
   <body>

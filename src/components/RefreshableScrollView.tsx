@@ -11,27 +11,36 @@ import {
 } from 'react-native';
 
 interface Props extends ScrollViewProps {
-  onRefresh: () => Promise<void> | void;
+  /** Si se indica, activa "tirar para refrescar" */
+  onRefresh?: () => Promise<void> | void;
   children: React.ReactNode;
 }
 
 const PULL_THRESHOLD = 70;
 const MAX_PULL = 120;
 
+const isStandaloneWeb = (): boolean => {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  return nav.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches === true;
+};
+
 /**
- * ScrollView con "tirar para refrescar".
- * - iOS/Android nativo: RefreshControl.
- * - Web / PWA (Safari iOS): listeners táctiles nativos del DOM sobre el nodo
- *   desplazable, ya que RefreshControl no funciona en react-native-web.
+ * Contenedor desplazable de pantalla.
+ * - Nativo (iOS/Android): ScrollView + RefreshControl.
+ * - Web: NO usa ScrollView. Hace scroll el documento, que es lo que permite a
+ *   Safari dibujar el contenido bajo sus barras y ocupar toda la pantalla en modo app.
+ *   En Safari normal se usa su propio "tirar para refrescar"; en modo app
+ *   (pantalla de inicio) se implementa con eventos táctiles sobre la ventana.
  */
 export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ...rest }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [pull, setPull] = useState(0);
-  const scrollRef = useRef<any>(null);
   const onRefreshRef = useRef(onRefresh);
   onRefreshRef.current = onRefresh;
 
   const runRefresh = async () => {
+    if (!onRefreshRef.current) return;
     setRefreshing(true);
     try {
       await onRefreshRef.current();
@@ -42,36 +51,27 @@ export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ..
   };
 
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const anyRef = scrollRef.current as any;
-    const node: HTMLElement | null =
-      anyRef?.getScrollableNode?.() ?? (typeof HTMLElement !== 'undefined' && anyRef instanceof HTMLElement ? anyRef : null);
-    if (!node) return;
+    if (!onRefresh || !isStandaloneWeb()) return;
 
     let startY: number | null = null;
     let currentPull = 0;
     let busy = false;
 
     const onStart = (e: TouchEvent) => {
-      if (busy || node.scrollTop > 0) {
-        startY = null;
-        return;
-      }
-      startY = e.touches[0].clientY;
+      startY = busy || window.scrollY > 0 ? null : e.touches[0].clientY;
       currentPull = 0;
     };
 
     const onMove = (e: TouchEvent) => {
       if (startY === null || busy) return;
       const delta = e.touches[0].clientY - startY;
-      if (delta <= 0 || node.scrollTop > 0) {
+      if (delta <= 0 || window.scrollY > 0) {
         if (currentPull !== 0) {
           currentPull = 0;
           setPull(0);
         }
         return;
       }
-      // Evita el rebote nativo mientras se tira hacia abajo
       if (e.cancelable) e.preventDefault();
       currentPull = Math.min(MAX_PULL, delta * 0.5);
       setPull(currentPull);
@@ -90,7 +90,7 @@ export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ..
       setPull(PULL_THRESHOLD);
       setRefreshing(true);
       try {
-        await onRefreshRef.current();
+        await onRefreshRef.current?.();
       } finally {
         busy = false;
         setRefreshing(false);
@@ -98,24 +98,26 @@ export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ..
       }
     };
 
-    node.addEventListener('touchstart', onStart, { passive: true });
-    node.addEventListener('touchmove', onMove, { passive: false });
-    node.addEventListener('touchend', onEnd);
-    node.addEventListener('touchcancel', onEnd);
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
     return () => {
-      node.removeEventListener('touchstart', onStart);
-      node.removeEventListener('touchmove', onMove);
-      node.removeEventListener('touchend', onEnd);
-      node.removeEventListener('touchcancel', onEnd);
+      window.removeEventListener('touchstart', onStart);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
     };
-  }, []);
+  }, [!!onRefresh]);
 
   if (Platform.OS !== 'web') {
     return (
       <ScrollView
         {...rest}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={runRefresh} tintColor="#38bdf8" colors={['#38bdf8']} />
+          onRefresh ? (
+            <RefreshControl refreshing={refreshing} onRefresh={runRefresh} tintColor="#38bdf8" colors={['#38bdf8']} />
+          ) : undefined
         }
       >
         {children}
@@ -127,7 +129,7 @@ export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ..
   const ready = pull >= PULL_THRESHOLD;
 
   return (
-    <ScrollView ref={scrollRef} {...rest}>
+    <View style={rest.contentContainerStyle}>
       {indicatorHeight > 0 && (
         <View style={[styles.indicator, { height: indicatorHeight }]}>
           {refreshing ? (
@@ -140,7 +142,7 @@ export const RefreshableScrollView: React.FC<Props> = ({ onRefresh, children, ..
         </View>
       )}
       {children}
-    </ScrollView>
+    </View>
   );
 };
 
