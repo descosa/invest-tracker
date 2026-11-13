@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { InvestmentProject } from './src/types/investment';
 import { loadProjects, saveProjects, resetToDemoProjects } from './src/storage/projectStorage';
@@ -47,6 +47,16 @@ export default function App() {
     setSelectedProjectId(null);
   };
 
+  const handleRefresh = async () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      // En web/PWA recarga la página para obtener también la última versión desplegada
+      window.location.reload();
+      return;
+    }
+    const data = await loadProjects();
+    setProjects(data);
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -74,6 +84,7 @@ export default function App() {
           onSelectProject={(p) => setSelectedProjectId(p.id)}
           onOpenAddProject={() => setAddProjectVisible(true)}
           onResetDemo={handleResetDemo}
+          onRefresh={handleRefresh}
         />
       )}
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  StatusBar,
-  Platform,
-  RefreshControl,
 } from 'react-native';
+import { RefreshableScrollView } from '../components/RefreshableScrollView';
+import { scrollBottomPadding } from '../utils/layout';
 import { InvestmentCategory, InvestmentProject } from '../types/investment';
 import {
   calculatePortfolioMetrics,
@@ -26,6 +25,7 @@ interface DashboardScreenProps {
   onSelectProject: (project: InvestmentProject) => void;
   onOpenAddProject: () => void;
   onResetDemo: () => void;
+  onRefresh: () => Promise<void> | void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -33,6 +33,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onSelectProject,
   onOpenAddProject,
   onResetDemo,
+  onRefresh,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<InvestmentCategory | 'ALL'>('ALL');
   const metrics = calculatePortfolioMetrics(projects);
@@ -47,7 +48,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <RefreshableScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.container}
+        onRefresh={onRefresh}
+      >
         {/* Header Superior */}
         <View style={styles.topBar}>
           <View>
@@ -171,7 +177,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             ))
           )}
         </View>
-      </ScrollView>
+      </RefreshableScrollView>
     </SafeAreaView>
   );
 };
@@ -181,10 +187,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#090d16',
   },
+  scroll: {
+    flex: 1,
+  },
   container: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: Platform.OS === 'web' ? 40 : 30,
+    paddingBottom: scrollBottomPadding,
   },
   topBar: {
     flexDirection: 'row',

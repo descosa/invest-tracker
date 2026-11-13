@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
-  Platform,
 } from 'react-native';
+import { scrollBottomPadding } from '../utils/layout';
 import { InvestmentProject, Transaction } from '../types/investment';
 import {
   calculateProjectMetrics,
@@ -62,7 +62,7 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {/* Navigation Bar */}
         <View style={styles.navBar}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
@@ -212,10 +212,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#090d16',
   },
+  scroll: {
+    flex: 1,
+  },
   container: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: Platform.OS === 'web' ? 40 : 30,
+    paddingBottom: scrollBottomPadding,
   },
   navBar: {
     flexDirection: 'row',
